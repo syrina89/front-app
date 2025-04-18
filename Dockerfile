@@ -1,34 +1,17 @@
-# Use official Node.js 14 as base image
-FROM  --platform=linux/amd64 node:18 AS build
+FROM node:18 AS builder
+WORKDIR /usr/src/app
+ARG VITE_API_URL 
 
-# Set working directory
-WORKDIR /app
-
-# Set environment variable
-ARG VITE_API_URL
 ENV VITE_API_URL=${VITE_API_URL}
-
-# Copy package.json and package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install  --force
-
-# Copy the rest of the client code
+COPY package.json  .
+RUN npm install --force
 COPY . .
-
-# Build the client for production
+#EXPOSE 5173
+#CMD [ "npm","run","dev","--","--host","0.0.0.0"]
 RUN npm run build
-
-
-FROM  --platform=linux/amd64 nginx:alpine
-# Copy the build artifacts from the build stage
-COPY --from=build /app/dist /usr/share/nginx/html
-# NGINX default configuration file
-COPY nginx.conf /etc/nginx/nginx.conf
-
-# Expose port 80
+#----------------------------------------------------
+ FROM nginx:alpine
+COPY --from=builder /usr/src/app/dist /usr/share/nginx/html
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-
+CMD [ "nginx","-g","daemon off;" ]
+   
